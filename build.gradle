@@ -4,6 +4,7 @@ plugins {
     id 'java'
     id 'eclipse-wtp'
     id 'idea'
+    id 'com.microsoft.azure.azurewebapp' version '1.7.1'
 }
 
 repositories {
@@ -12,6 +13,7 @@ repositories {
 
 ext {
     javaCfEnvVersion = '2.4.0'
+    
 }
 
 dependencies {
@@ -46,15 +48,17 @@ dependencies {
     // Oracle - uncomment one of the following after placing driver in ./libs
     // compile files('libs/ojdbc8.jar')
     // compile files('libs/ojdbc7.jar')
+   
 
     // Testing
     testImplementation "junit:junit"
     testImplementation "org.springframework.boot:spring-boot-starter-test"
 }
 
+
 java {
     sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_11
 
     if (JavaVersion.current() != project.targetCompatibility) {
         logger.warn("The build is using Java ${JavaVersion.current()} to build a Java ${project.targetCompatibility} compatible archive.")
@@ -64,4 +68,34 @@ java {
 
 jar {
     enabled = false
+}
+
+azurewebapp {
+	// Input Parameter 적용
+	def env = project.hasProperty("env")? project.getProperty("env"): null
+	def app = project.hasProperty("app")? project.getProperty("app"): null
+	
+	// env, app이름이 일치하지 않을 경우 예외처리
+	if (!["prod", "dev", "qa"].contains(env)) {
+		throw new GradleException("There are no valid env property values.")
+	} else if (!["app", "web"].contains(app)) {
+		throw new GradleException("There are no valid app property values.")
+	} else if (env == null || app == null) {
+		throw new GradleException("There are no valid property values.")
+		println "Example : gradle azureWebAppDeploy -Penv=dev -Papp=app"
+	} else {
+		println "env: $env"
+    	println "app: $app"
+	}
+	
+	// App Service 환경 정보
+    subscription = "<Subscription ID>"
+    resourceGroup = "nuri-$env-rg"
+    appName = "nuri-$env-$app"
+    region = "koreacentral"
+    runtime {
+      os = "Linux"
+      webContainer = "Java SE" 
+      javaVersion = "Java 11"
+    }
 }
